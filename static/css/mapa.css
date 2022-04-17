@@ -1,0 +1,23 @@
+.floating-tools {
+	position: absolute;
+	width: 350px;
+	top: 50px;
+	left: 400px;
+	background: #1f2833;
+	color: #c5c6c7;
+	border-radius: 4px;
+	box-shadow: 1px 0 6px 0 #000;
+}
+
+.floating-tools label {
+	cursor: move;
+	margin-bottom: 15px;
+}
+
+.floating-tools label i {
+	cursor: pointer;
+}
+
+.floating-tools input, .floating-tools button {
+	width: 100%;
+}

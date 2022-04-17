@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+{% load static %}
+
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/foundation/6.6.3/css/foundation.min.css">
+    <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,600">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.3.1/css/ol.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/mapa.css">
+    <title>Mapa - Ilha do Fundão</title>
+    <style>
+        body {
+	        background: #071e2e;
+	        font-family: 'Open Sans', sans-serif;
+        }
+
+        #mapa {
+            width: 100%;
+            height:600px;
+        }
+
+        .tools label {
+            color: #111419;
+        }
+
+        .botao_principal{
+            position: absolute;
+            width: 150px;
+            top: 70px;
+            left: 200px;
+        }
+
+        .botao_principal label {
+            cursor: move;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .floating-tools {
+            position: absolute;
+            width: 350px;
+            top: 50px;
+            left: 400px;
+            background: #1f2833;
+            color: #c5c6c7;
+            border-radius: 4px;
+            box-shadow: 1px 0 6px 0 #000;
+        }
+
+        .floating-tools label {
+            cursor: move;
+            margin-bottom: 15px;
+        }
+
+        .floating-tools label i {
+            cursor: pointer;
+        }
+
+        .floating-tools input, .floating-tools button {
+            width: 100%;
+        }
+
+        .button {
+            background: rgb(23,48,66);
+        }
+
+        .buttons-div .btn-20 {
+	        display: inline-block;
+	        width: 20%;
+		    border: 2px solid #1f2833;
+	        text-align: left;
+        }
+        label {
+            color: #fff;
+            font-weight: 600;
+            padding: 5px 5px 5px 8px;
+            background: rgb(23,48,66);
+            cursor: pointer;
+        }
+
+        #tooltip {
+            color: #c5c6c7;
+            display: none;
+            position: absolute;
+            border-radius: 3px;
+            border: 1px solid #29313b;
+            background: rgb(23,48,66);
+            border: 1px solid #0b0c10;
+            box-shadow: 1px 0 6px 0 #000;
+            border-radius: 4px;
+            font-size: 90%;
+            z-index: 1020;
+            min-width: 200px;
+        }
+
+        #tooltip ul {
+            margin-bottom: 0;
+        }
+        #tooltip2 {
+            color: #c5c6c7;
+            display: none;
+            position: absolute;
+            border-radius: 3px;
+            border: 1px solid #29313b;
+            background: rgb(23,48,66);
+            border: 1px solid #0b0c10;
+            box-shadow: 1px 0 6px 0 #000;
+            border-radius: 4px;
+            font-size: 90%;
+            z-index: 1020;
+            min-width: 200px;
+        }
+
+        #tooltip2 ul {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1 style="color:#FFFFFF;">Ilha do Fundão</h1>   
+
+    <div id="mapa" class="mapa"></div>
+    <div id="tooltip"></div>´
+    <div id="tooltip2"></div>
+
+    <div id="div-tools" class="botao_principal" style="padding: 20px; background-color: rgb(23,48,66);">
+        <label>Abrir editor de Elementos</label>
+        <div style="text-align: center;">
+            <button id="btn-draw-tools" class="button btn-20" data-tooltip tabindex="1" title="Desenhar" data-position="top" data-alignment="center"><i class="fa-fw fa-lg fas fa-draw-polygon"></i></button>
+        </div>
+    </div>
+
+    <div id="draw-tools" class="hide floating-tools" style="background-color: rgb(23,48,66);">
+		<label><i class="fas fa-lg fa-times" data-closes="#draw-tools"></i> &nbsp; Desenhar no mapa</label>
+		<div class="buttons-div" style="width: 350px; padding: 0 15px 0 15px">
+			<button data-free="false" data-draw="Polygon" class="button btn-20" data-tooltip tabindex="1" title="Retângulo" data-position="bottom" data-alignment="center"><i class="fa-fw fa-lg far fa-square"></i></button>
+			<button data-free="false" data-draw="Circle" class="button btn-20" data-tooltip title="Circulo" data-position="bottom" data-alignment="center"><i class="fa-fw fa-lg far fa-circle"></i></button>
+			<button data-free="false" data-draw="Poligono" class="button btn-20" data-tooltip tabindex="2" title="Polígono" data-position="bottom" data-alignment="center"><i class="fa-regular fa-fw fa-lg fas fa-hexagon"></i></button>
+            <!--<button data-free="false" data-draw="LineString" class="button btn-20" data-tooltip title="Linha" data-position="bottom" data-alignment="center"><b>&#8212;</b></button>-->
+			<!--<button data-free="true" data-draw="LineString" class="button btn-20" data-tooltip title="Mão-Livre" data-position="bottom" data-alignment="center"><i class="fa-fw fa-lg fas fa-pencil-alt"></i></button>-->
+			<button data-free="true" data-draw="Point" class="button btn-20" data-tooltip title="Ponto" data-position="bottom" data-alignment="center"><i class="fa-fw fa-lg fas fa-map-marker"></i></button>
+		</div>
+		<div class="grid-container grid-x grid-margin-x">
+			<div class="cell small-6">
+				Stroke: <input type="color" id="stroke-color" class="draw-style" value="#66fcf1">
+			</div>
+			<div class="cell small-6">
+				Fill: <input type="color" id="fill-color" class="draw-style" value="#ffffff">
+			</div>
+			<div class="cell small-12">
+				Fill opacity:
+				<div class="grid-x grid-margin-x">
+					<div class="cell small-9">
+						<div class="slider" data-slider data-initial-start="20">
+							<span class="slider-handle"  data-slider-handle role="slider" aria-controls="fill-opacity"></span>
+							<span class="slider-fill" data-slider-fill></span>
+						</div>
+					</div>
+					<div class="cell small-3">
+						<input type="number" class="draw-style" id="fill-opacity">
+					</div>
+				</div>
+			</div>
+			<div class="cell small-12 text-right" style="padding-bottom: 15px;">
+				<a style="color: #ff5757;" href="#" id="clear-drawing" data-tooltip title="Clear drawing" data-position="bottom" data-alignment="center"><i class="fas fa-trash-alt"></i></a>
+			</div>
+		</div>
+	</div>
+</body>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/foundation/6.6.3/js/foundation.min.js" integrity="sha256-pRF3zifJRA9jXGv++b06qwtSqX1byFQOLjqa2PTEb2o=" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.14.1/build/ol.js"></script>
+
+<script type="text/javascript">
+
+    const projection = ol.proj.get('EPSG:4326'),
+            /* As constantes e o for abaixo servem para fazer o WMTS funcionar */
+            projectionExtent = projection.getExtent(),
+            size = ol.extent.getWidth(projectionExtent) / 256,
+            resolutions = new Array(14),
+            matrixIds = new Array(14),
+            tileGridWMTS = new ol.tilegrid.WMTS({
+                origin: ol.extent.getTopLeft(projectionExtent),
+                resolutions: resolutions,
+                matrixIds: matrixIds,
+            });
+            for (let z = 0; z < 14; ++z) {
+                // generate resolutions and matrixIds arrays for this WMTS
+                resolutions[z] = size / Math.pow(2, z+1);
+                matrixIds[z] = 'EPSG:4326:'+z;
+            }
+
+    const fullScreenControls = new ol.control.FullScreen();
+    //const mousePositionControl = new ol.control.MousePosition();    
+    const scaleLineControl = new ol.control.ScaleLine();
+    const zoomSliderControl = new ol.control.ZoomSlider();
+    const zoomToExtentControl = new ol.control.ZoomToExtent();
+    const overViewMapControl = new ol.control.OverviewMap({
+    collapsed: false,
+    layers: [
+        new ol.layer.Tile({
+            source: new ol.source.WMTS({
+                url: 'http://mapas.saltambiental.com.br:8080/geoserver/gwc/service/wmts',
+                crossOrigin: 'Anonymous',
+                matrixSet: 'EPSG:4326',
+                layer: 'ecology:mapa_escuro',
+                format: 'image/jpeg',
+                projection: projection,
+                ratio: 1,
+                tileGrid: tileGridWMTS,
+                wrapX: true,
+            }),
+        }),        
+    ]
+});
+
+$(function (){
+
+    /* Desenhar */
+
+    var drawSource = new ol.source.Vector({
+        format: new ol.format.GeoJSON({
+            defaultDataProjection: 'EPSG:4326',
+        }),
+    });
+        
+
+    var draw = null;
+    var snap_ = new ol.interaction.Snap({source: drawSource});
+    var modify_ = new ol.interaction.Modify({source: drawSource});
+
+    var drawSource2 = new ol.source.Vector();
+    var drawLayer2 = new ol.layer.Vector({
+        source: drawSource2,
+        style: new ol.style.Style({
+            fill: new ol.style.Fill({
+                color: 'rgba(255, 255, 255, 0.2)'
+            }),
+            stroke: new ol.style.Stroke({
+                color: '#66fcf1',
+                width: 2
+            }),
+            image: new ol.style.Circle({
+                radius: 7,
+                fill: new ol.style.Fill({
+                    color: '#66fcf1'
+                })
+            }),
+        }),
+    });
+    var draw2 = null;
+    var snap = new ol.interaction.Snap({source: drawSource2});
+    var modify = new ol.interaction.Modify({source: drawSource2});
+
+
+    const map = new ol.Map({
+        view: new ol.View({
+            center:[0,0],
+            zoom: 0,                    
+        }),
+        projection: projection,
+        layers: [
+            new ol.layer.Tile({
+                source: new ol.source.OSM(),
+            }),
+            new ol.layer.Vector({
+                source: drawSource,
+                visible: true,
+            }),
+            drawLayer2,           
+        ],
+        target: 'mapa',
+        controls: ol.control.defaults().extend([
+            fullScreenControls,
+            //mousePositionControl,    
+            overViewMapControl,        
+            scaleLineControl,
+            zoomSliderControl,
+            zoomToExtentControl,            
+        ])
+    });
+    $('.ol-full-screen').css('right','50px');
+
+    $('.botao_principal').draggable({
+        handle: 'label',
+        containment: '#mapa',
+    });
+    
+    
+    $('.floating-tools').draggable({
+        handle: 'label',
+        containment: '#mapa',
+    });
+
+    $('#tooltip').draggable({
+        handle: 'div',
+        containment: '#mapa',
+    });
+
+    /* Desenhar Polígonos */
+	$('#btn-draw-tools').on('click', function(){
+		$('#draw-tools').toggleClass('hide');        
+	}); 
+    
+    $('#clear-drawing').on('click', function(){
+		drawSource2.clear();
+	});
+
+    $.getJSON('/get_elementos/', function(dados){
+        var elementos_json = eval(dados);
+        for(var i = 0; i<elementos_json.length;i++){
+            var nome = elementos_json[i].fields.nome;
+            var data = elementos_json[i].fields.data; 
+            var user = elementos_json[i].fields.user;       
+            var geometria = eval('('+elementos_json[i].fields.geometria+')');
+            var fill = elementos_json[i].fields.fill;
+            var stroke = elementos_json[i].fields.stroke;
+            var font = elementos_json[i].fields.font;
+            var type = elementos_json[i].fields.type;
+            var raio = eval(elementos_json[i].fields.raio);
+            var centro = eval(elementos_json[i].fields.centro);
+            var funcao = elementos_json[i].fields.function;
+            
+                    
+            //console.log(nome);
+            //console.log(geometria);
+            //console.log(fill);
+            //console.log(stroke);
+            //console.log(font);
+            //console.log(type);
+            //console.log(funcao);
+            //console.log(raio);
+            //console.log(centro);
+
+
+            var estilo_1 = new ol.style.Style({
+                fill: new ol.style.Fill({
+                    color: fill,
+                }),
+                stroke: new ol.style.Stroke({
+                    color: stroke,
+                    width: 2,
+                }),					
+			});
+
+            if(eval(type)=='Point'){               
+                var ponto = new ol.Feature({
+                    geometry: new ol.geom.Point([geometria.flatCoordinates[0],geometria.flatCoordinates[1]]),
+                    name: nome,
+                    data: data,
+                    user: user,
+			    });  
+                //ponto.setStyle(estilo_1);
+                drawSource.addFeature(ponto);                
+               
+            } else if(eval(type)=='Polygon' || funcao =='x') {
+                
+                var no_pontos = geometria.flatCoordinates.length/2
+                var coordenadas = [];
+                for(var j=0;j<no_pontos;j++){
+                    coordenadas.push([geometria.flatCoordinates[2*j],geometria.flatCoordinates[2*j+1]])                    
+                };                
+                var poligono = new ol.Feature({
+                        geometry: new ol.geom.Polygon([coordenadas]),
+                        name: nome, 
+                        data: data,
+                        user: user,
+			    });  
+                drawSource.addFeature(poligono);                 
+            } else if (eval(type)=='Circle' || funcao =='o') {
+          
+                var circulo = new ol.Feature({
+                        geometry: new ol.geom.Circle(centro,raio),
+                        name: nome, 
+                        data: data,
+                        user: user,
+			    });  
+                console.log(circulo);
+                drawSource.addFeature(circulo);
+            }          
+        };        
+    });   
+    
+    $('#point-from-coord').on('click', function(){
+		var lon = $('#lon-point-from-coord').val(),
+			lat = $('#lat-point-from-coord').val();
+		drawSource2.addFeature(
+			new ol.Feature.Feature({
+				geometry: new ol.geom.Point([lon, lat]),
+			})
+		);
+	});
+
+    $('[data-draw]').on('click', function(){
+		if (draw2) {
+			map.removeInteraction(draw2);
+		}
+		if ($(this).data('draw') == 'Polygon') {
+			draw2 = new ol.interaction.Draw({
+				source: drawSource2,
+				type: 'Circle',
+				geometryFunction: ol.interaction.Draw.createBox(),
+			});
+		} else if ($(this).data('draw') == 'Poligono') {
+			draw2 = new ol.interaction.Draw({
+				source: drawSource2,
+				type: 'Polygon',
+				//geometryFunction: ol.interaction.Draw.createBox(),
+			});
+        } else {
+			draw2 = new ol.interaction.Draw({
+				source: drawSource2,
+				type: $(this).data('draw'),
+				freehand: $(this).data('free'),
+			});
+		}
+	
+		draw2.on('drawstart', function(e){
+			var rgb = hexToRgb($('#fill-color').val()),
+				opacity = parseInt($('#fill-opacity').val()) / 100,
+				rgbString = 'rgba('+rgb.r+', '+rgb.g+', '+rgb.b+', '+opacity+')',
+				estilo = new ol.style.Style({
+					fill: new ol.style.Fill({
+						color: rgbString
+					}),
+					stroke: new ol.style.Stroke({
+						color: $('#stroke-color').val(),
+						width: 2
+					}),
+					image: new ol.style.Circle({
+						radius: 7,
+						fill: new ol.style.Fill({
+							color: $('#fill-color').val()
+						})
+					}),
+					text: new ol.style.Text({
+						font: '15px "Open sans", sans-serif',
+						fill: new ol.style.Fill({
+							color: $('#fill-color').val(),
+						}),
+						stroke: new ol.style.Stroke({
+							color: $('#stroke-color').val(),
+							width: 2,
+						}),
+					}),
+				});
+			if ($('#label-text').val()) {
+				estilo.getText().setText($('#label-text').val());
+			}
+			e.feature.setStyle(estilo);         
+        });
+
+		draw2.on('drawend', function(e){
+            // Abrir caixa de diálogo para inserir o nome com botão
+            
+            var elmento_estilo = e.feature.getStyle();
+            var elemento_fill_color = elmento_estilo.da.ka;
+            var elemento_stroke_color = elmento_estilo.ma.ka;
+            var elemento_font = elmento_estilo.oo.Ja;
+            var elemento_type = e.target.nl;
+            var elemento_geometryfunction = '';
+            var elemento_raio = '';
+            var elemento_centro = '';
+            if(e.target.Va.name=='o'){
+                elemento_geometryfunction = 'o'
+            } else {
+                elemento_geometryfunction = 'x'
+            }
+            if(elemento_type=='Circle'&&elemento_geometryfunction=='o'){
+                elemento_raio = e.feature.getGeometry().getRadius();
+                elemento_centro = e.feature.getGeometry().getCenter();
+                console.log(elemento_raio,elemento_centro);
+            }
+            tooltip(e.feature.getGeometry(), elemento_fill_color, elemento_stroke_color, elemento_font, elemento_type, elemento_geometryfunction, elemento_raio, elemento_centro);
+			map.removeInteraction(draw2);
+			map.removeInteraction(snap);
+		});
+
+		map.addInteraction(draw2);
+		map.addInteraction(snap);
+	});
+
+    //tooltip2
+
+    map.on('pointermove', function(e){
+		var f = map.forEachFeatureAtPixel(e.pixel, function(feature) {
+			return feature;
+		}),
+		of = $('#js-mapa').offset();
+        if (f) {
+
+            console.log(f.getProperties().name);
+
+            var posX = window.event.clientX;
+            var posY = window.event.clientY;
+
+            $('#tooltip2').css({
+                'display': 'block',
+                'left': posX+20,
+                'top': posY-20,
+            }).html('<div class="title" style="background-color:rgb(23,48,66);" ><b>Elemento</b></div>'+
+            '<div class="nome_elemento">Nome: <b>'+f.getProperties().name+'</b></div>'+
+            '<div class="data_elemento">Data :'+f.getProperties().data+'</div>'+
+            '<div class="data_elemento">Criador :'+f.getProperties().user+'</div>'
+            );
+        } else{
+            $('#tooltip2').css({'display': 'none'});
+        } 
+    });
+ 
+
+
+
+
+});
+
+//HextoRGB
+function hexToRgb(hex) {
+	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	return result ? {
+		r: parseInt(result[1], 16),
+		g: parseInt(result[2], 16),
+		b: parseInt(result[3], 16)
+	} : null;
+}
+
+function tooltip(geometria, fill_color, stroke_color,font, type, geometryfunction, raio, centro){
+    var posX = window.event.clientX;
+    var posY = window.event.clientY;
+
+    $('#tooltip').css({
+        'display': 'block',
+        'left': posX+20,
+        'top': posY-20,
+    }).html('<div class="title" style="background-color:rgb(23,48,66);" ><b>Nomear Elemento</b></div>'+
+    '<div class="nome_elemento">Nome:</div>'+'<div class="nome_elemento"><input type="text" id="name" name="name"</div>'+
+    '<div style="text-align:center;" class="nome_elemento"><button style="color:white; font-weight:bold;background-color:rgb(23,48,66);margin-top:10px;margin-bottom:10px;padding:1em;cursor:pointer;" class="button_nome_elemento" id="button_nome_elemento" type="button">Submit</button></div>'
+    );    
+    $('#button_nome_elemento').on('click', function(){
+        var name = document.querySelector('input').value;
+        $('#tooltip').css({'display': 'none'});
+        //var name = JSON.stringify({"name": document.querySelector('input').value});
+        
+        var info = [name,'DIVISOR', geometria,'DIVISOR',fill_color,'DIVISOR',stroke_color,'DIVISOR',font,'DIVISOR',type,'DIVISOR',raio,'DIVISOR',centro,'DIVISOR',geometryfunction]        
+        $.ajax({
+            method: 'POST',
+            url: '/dados_elementos/',
+            data: JSON.stringify(info),
+            success: function (data) {
+                alert("Elemento criado com sucesso");
+            },                
+            error: function (data) {
+                alert("Erro na criação do elemento");          
+            },                  
+        });
+        
+        //var url = '/dados_elementos/?name='+name+'&info='+info+'&fill='+fill_color+'&stroke='+stroke_color+'&font='+font+'&type='+type+'&function='+geometryfunction;
+        //$.getJSON(url, function(data){
+            //console.log(data);    
+        //})
+            
+    });
+};
+
+
+</script>
+</html>
+
