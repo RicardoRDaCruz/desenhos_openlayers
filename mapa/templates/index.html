@@ -28,19 +28,6 @@
             color: #111419;
         }
 
-        .botao_principal{
-            position: absolute;
-            width: 150px;
-            top: 70px;
-            left: 200px;
-        }
-
-        .botao_principal label {
-            cursor: move;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-
         .floating-tools {
             position: absolute;
             width: 350px;
@@ -128,15 +115,15 @@
     <div id="tooltip"></div>´
     <div id="tooltip2"></div>
 
-    <div id="div-tools" class="botao_principal" style="padding: 20px; background-color: rgb(23,48,66);">
+    <!--<div id="div-tools" class="botao_principal" style="padding: 20px; background-color: rgb(23,48,66);">
         <label>Abrir editor de Elementos</label>
         <div style="text-align: center;">
             <button id="btn-draw-tools" class="button btn-20" data-tooltip tabindex="1" title="Desenhar" data-position="top" data-alignment="center"><i class="fa-fw fa-lg fas fa-draw-polygon"></i></button>
         </div>
-    </div>
+    </div>-->
 
-    <div id="draw-tools" class="hide floating-tools" style="background-color: rgb(23,48,66);">
-		<label><i class="fas fa-lg fa-times" data-closes="#draw-tools"></i> &nbsp; Desenhar no mapa</label>
+    <div id="draw-tools" class="floating-tools" style="background-color: rgb(23,48,66);">
+		<label style="text-align: center;">Desenhar no mapa</label>
 		<div class="buttons-div" style="width: 350px; padding: 0 15px 0 15px">
 			<button data-free="false" data-draw="Polygon" class="button btn-20" data-tooltip tabindex="1" title="Retângulo" data-position="bottom" data-alignment="center"><i class="fa-fw fa-lg far fa-square"></i></button>
 			<button data-free="false" data-draw="Circle" class="button btn-20" data-tooltip title="Circulo" data-position="bottom" data-alignment="center"><i class="fa-fw fa-lg far fa-circle"></i></button>
@@ -153,18 +140,8 @@
 				Fill: <input type="color" id="fill-color" class="draw-style" value="#ffffff">
 			</div>
 			<div class="cell small-12">
-				Fill opacity:
-				<div class="grid-x grid-margin-x">
-					<div class="cell small-9">
-						<div class="slider" data-slider data-initial-start="20">
-							<span class="slider-handle"  data-slider-handle role="slider" aria-controls="fill-opacity"></span>
-							<span class="slider-fill" data-slider-fill></span>
-						</div>
-					</div>
-					<div class="cell small-3">
-						<input type="number" class="draw-style" id="fill-opacity">
-					</div>
-				</div>
+				Fill opacity (0-100):
+                <input type="number" class="draw-style" id="fill-opacity">				
 			</div>
 			<div class="cell small-12 text-right" style="padding-bottom: 15px;">
 				<a style="color: #ff5757;" href="#" id="clear-drawing" data-tooltip title="Clear drawing" data-position="bottom" data-alignment="center"><i class="fas fa-trash-alt"></i></a>
@@ -287,10 +264,10 @@ $(function (){
     });
     $('.ol-full-screen').css('right','50px');
 
-    $('.botao_principal').draggable({
-        handle: 'label',
-        containment: '#mapa',
-    });
+    //$('.botao_principal').draggable({
+    //    handle: 'label',
+    //    containment: '#mapa',
+    //});
     
     
     $('.floating-tools').draggable({
@@ -319,8 +296,8 @@ $(function (){
             var data = elementos_json[i].fields.data; 
             var user = elementos_json[i].fields.user;       
             var geometria = eval('('+elementos_json[i].fields.geometria+')');
-            var fill = elementos_json[i].fields.fill;
-            var stroke = elementos_json[i].fields.stroke;
+            var fill = eval(elementos_json[i].fields.fill);
+            var stroke = eval(elementos_json[i].fields.stroke);
             var font = elementos_json[i].fields.font;
             var type = elementos_json[i].fields.type;
             var raio = eval(elementos_json[i].fields.raio);
@@ -349,14 +326,23 @@ $(function (){
                 }),					
 			});
 
-            if(eval(type)=='Point'){               
+            var estilo_2 = new ol.style.Style({
+                image: new ol.style.Circle({
+						radius: 7,
+						fill: new ol.style.Fill({
+							color: fill
+						})
+				}),				
+			});
+
+            if(eval(type)=='Point'){                  
                 var ponto = new ol.Feature({
                     geometry: new ol.geom.Point([geometria.flatCoordinates[0],geometria.flatCoordinates[1]]),
                     name: nome,
                     data: data,
                     user: user,
 			    });  
-                //ponto.setStyle(estilo_1);
+                ponto.setStyle(estilo_2);
                 drawSource.addFeature(ponto);                
                
             } else if(eval(type)=='Polygon' || funcao =='x') {
@@ -371,7 +357,8 @@ $(function (){
                         name: nome, 
                         data: data,
                         user: user,
-			    });  
+			    });
+                poligono.setStyle(estilo_1);
                 drawSource.addFeature(poligono);                 
             } else if (eval(type)=='Circle' || funcao =='o') {
           
@@ -381,7 +368,7 @@ $(function (){
                         data: data,
                         user: user,
 			    });  
-                console.log(circulo);
+                circulo.setStyle(estilo_1);
                 drawSource.addFeature(circulo);
             }          
         };        
@@ -493,9 +480,7 @@ $(function (){
 			return feature;
 		}),
 		of = $('#js-mapa').offset();
-        if (f) {
-
-            console.log(f.getProperties().name);
+        if (f && f.getProperties().name) {
 
             var posX = window.event.clientX;
             var posY = window.event.clientY;
